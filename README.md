@@ -1,3 +1,5 @@
+![logo](docs/MeshCompletion%20Icon.png)
+
 # geomapi-completiontools
 Python tools to complete meshes and poinclouds
 
