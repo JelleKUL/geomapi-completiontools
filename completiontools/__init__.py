@@ -15,11 +15,11 @@ def combine_geometry(ogGeometry, newGeometry, distanceTreshold):
     # Step 2: Filter out the irrelevant points in the ogGeometry
     relevantOg, irrelevantOg = get_points_in_hull(ogGeometry, newGeoHull)
     # Step 3: Isolate the not covered points of the ogGeometry compared to the newGeometry
-    coveredPoints, unCoveredPoints = ut.filter_pcd_by_distance(relevantOg, newGeometry, distanceTreshold)
+    newGeometryPoints = newGeometry.sample_points_poisson_disk(number_of_points=100000)
+    coveredPoints, unCoveredPoints = ut.filter_pcd_by_distance(relevantOg, newGeometryPoints, distanceTreshold)
     # Step 4: Perform the visibility check of the not covered points
     invisibleUncoveredPoints = get_invisible_points(unCoveredPoints, newGeometry)
     # Step 5: Filter the newGeometryPoints to only keep the changed geometry
-    newGeometryPoints = newGeometry.sample_points_poisson_disk(number_of_points=100000)
     existingNewGeo, newNewGeo = ut.filter_pcd_by_distance(newGeometryPoints, relevantOg, distanceTreshold)
     # Step 6: Combine the irrelevant, unchanged and changed geometry
     newCombinedGeometry = irrelevantOg + coveredPoints + invisibleUncoveredPoints + newNewGeo
@@ -41,14 +41,41 @@ def get_points_in_hull(geometry, hull):
     return pcdInHull, pcdOutHull
 
 # checks if the points is inside the (closed) mesh
-def check_point_inside_mesh(point, mesh):
+def check_point_inside_mesh(points, mesh):
 
-    return True
+    # step 0: Set up a raycasting scene
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(o3d.t.geometry.TriangleMesh.from_legacy(mesh))
+    insideList = []
+    outsideList = []
+
+    for point in points:
+        # step 1: get the closest point to the mesh
+        queryPoint = o3d.core.Tensor([point], dtype=o3d.core.Dtype.Float32)
+        queryResult = scene.compute_closest_points(queryPoint)
+        closestPoint =  queryResult['points'].numpy()
+        # step 2 Get the normal of the triangle
+        closestTriangle = queryResult['primitive_ids'][0].item()
+        triangleNormal = np.asarray(mesh.triangle_normals[closestTriangle])
+        # step 3: compare the normal with the ray direction
+        closestPointDirection = closestPoint - point
+        dotProduct = (closestPointDirection @ triangleNormal)[0]
+        if (dotProduct > 0):
+            insideList.append(point)
+        else:
+            outsideList.append(point)
+
+    return insideList, outsideList
 
 # geturns all the points that are inside the (closed) mesh
 def get_invisible_points(points, mesh):
     
-    return points
+    insideList, outsideList = check_point_inside_mesh(points, mesh)
+    visiblePoints = o3d.geometry.PointCloud()
+    visiblePoints.points = o3d.utility.Vector3dVector(outsideList)
+    invisiblePoints = o3d.geometry.PointCloud()
+    invisiblePoints.points = o3d.utility.Vector3dVector(insideList)
+    return invisiblePoints
 
 def pcd_to_mesh(geometry):
     pass

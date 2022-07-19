@@ -35,6 +35,12 @@ def show_geometries(geometries, color = False):
     opt.light_on = True
     viewer.run()
 
+def get_lineset(geometry):
+    ls = o3d.geometry.LineSet.create_from_triangle_mesh(geometry)
+    ls.paint_uniform_color((1, 0, 0))
+
+    return ls
+
 def get_points_in_hull(points, hull):
     """
     Test if points in `points` are in `hull`

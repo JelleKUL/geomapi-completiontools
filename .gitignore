@@ -1,3 +1,6 @@
+# Local big files
+localfiles/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
