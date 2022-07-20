@@ -1,14 +1,30 @@
 """Tools to complete and combine meshes and pointclouds
 """
-
-import completiontools.params as params
 import completiontools.utils as ut
 import geomapi
 import open3d as o3d
 import numpy as np
 
 # The main function to combine 2 aligned geometries
-def combine_geometry(ogGeometry, newGeometry, distanceTreshold):
+def combine_geometry(ogGeometry: o3d.geometry, newGeometry :o3d.geometry, distanceTreshold : float = 0.05) -> o3d.geometry:
+    """Combines 2 aligned geometries assuming the ogGeometry is the reference and the newGeometry will suplement it.
+    this is performed in a few steps:
+        1) Create a convex hull of the newGeometry
+        2) Filter the relevant points of the ogGeometry
+        3) Perform a 2 step relevance check on the ogPoints if they fail either, they will be removed
+            3a) Coverage check: perform a distance query, points that to far away from the mesh could be either out of date or not scanned
+            3b) Visibility check: points that are inside the mesh are considered invisible and are kept, visible points are deemed out of date and are removed.
+        4) Filter the newPoints to only add the points that are changed
+        5) combine the changed-newPoints, the invisible-not-covered-ogPoints, the covered-ogPoints and the irrelevant points
+
+    Args:
+        ogGeometry (o3d.geometry): The reference geometry to be completed
+        newGeometry (o3d.geometry): _description_
+        distanceTreshold (float, optional): _description_. Defaults to 0.05.
+
+    Returns:
+        o3d.geometry: the combined geometry
+    """
 
     # Step 1: Create a convex hull of the newGeometry
     newGeoHull = get_convex_hull(newGeometry)
@@ -77,5 +93,5 @@ def get_invisible_points(points, mesh):
     invisiblePoints.points = o3d.utility.Vector3dVector(insideList)
     return invisiblePoints
 
-def pcd_to_mesh(geometry):
+def sample_mesh_with_density(mesh: o3d.geometry.TriangleMesh, density : float) -> o3d.geometry.PointCloud:
     pass

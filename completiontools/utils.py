@@ -3,13 +3,21 @@ import matplotlib
 from scipy.spatial import Delaunay
 import numpy as np
 import completiontools.params as params
+from typing import List, Tuple
 
 def hello_world():
     return "hello world!"
 
-def get_geometry(path):
-    """Returns the open3d geometry object from a path"""
-    
+def get_geometry(path : str) -> o3d.geometry:
+    """Gets a open3d Geometry from a path
+
+    Args:
+        path (str): The absulute path to the resource
+
+    Returns:
+        o3d.geometry: open3d.Pointcloud or open3d.Trianglemesh, depending on the extension
+    """
+
     newGeometry = None
     if(path.endswith(tuple(params.MESH_EXTENSION))):
         newGeometry = o3d.io.read_triangle_mesh(path)
@@ -17,10 +25,16 @@ def get_geometry(path):
         newGeometry.compute_vertex_normals()
     elif(path.endswith(tuple(params.PCD_EXTENSION))):
         newGeometry = o3d.io.read_point_cloud(path)
+        
     return newGeometry
 
-def show_geometries(geometries, color = False):
-    "displays the array of meshes in a 3D view"
+def show_geometries(geometries : List[o3d.geometry], color : bool = False):
+    """Displays different types of geometry in a scene
+
+    Args:
+        geometries (List[open3d.geometry]): The list of geometries
+        color (bool, optional): recolor the objects to have a unique color. Defaults to False.
+    """
 
     viewer = o3d.visualization.Visualizer()
     viewer.create_window()
@@ -35,37 +49,33 @@ def show_geometries(geometries, color = False):
     opt.light_on = True
     viewer.run()
 
-def get_lineset(geometry):
+def get_lineset(geometry: o3d.geometry.TriangleMesh, color: Tuple(float, float, float) = (1,0,0)) -> o3d.geometry.LineSet:
+    """Returns a lineset representation of a mesh
+
+    Args:
+        geometry (open3d.geometry.trianglemesh): the mesh to convert
+        color (Tuple, optional): the color to paint the lineset. Defaults to (1,0,0).
+
+    Returns:
+        open3d.geometry.LineSet: the lineset from the mesh
+    """
+
     ls = o3d.geometry.LineSet.create_from_triangle_mesh(geometry)
-    ls.paint_uniform_color((1, 0, 0))
+    ls.paint_uniform_color(color)
 
     return ls
 
-def get_points_in_hull(points, hull):
-    """
-    Test if points in `points` are in `hull`
+def get_indices_in_hull(points : np.array, hull :np.array) -> List[int]:
+    """Get the indices of all tyhe points that are inside the hull
 
-    `points` should be a `NxK` coordinates of `N` points in `K` dimensions
-    `hull` is either a scipy.spatial.Delaunay object or the `MxK` array of the 
-    coordinates of `M` points in `K`dimensions for which Delaunay triangulation
-    will be computed
-    Returns a bool array with in or not
-    """
+    Args:
+        points (numpy.array): should be a `NxK` coordinates of `N` points in `K` dimensions
+        hull (np.array): is either a scipy.spatial.Delaunay object or the `MxK` array of the 
+coordinates of `M` points in `K`dimensions for which Delaunay triangulation
+will be computed
 
-    if not isinstance(hull,Delaunay):
-        hull = Delaunay(hull)
-
-    return hull.find_simplex(points)>=0
-
-def get_indices_in_hull(points, hull):
-    """
-    Test if points in `points` are in `hull`
-
-    `points` should be a `NxK` coordinates of `N` points in `K` dimensions
-    `hull` is either a scipy.spatial.Delaunay object or the `MxK` array of the 
-    coordinates of `M` points in `K`dimensions for which Delaunay triangulation
-    will be computed
-    Returns the indices of the points that are in the hull, usefull for open3d pointclouds
+    Returns:
+        List[int]: the indices of the points that are in the hull
     """
 
     if not isinstance(hull,Delaunay):
@@ -79,15 +89,19 @@ def get_indices_in_hull(points, hull):
 
     return intList
 
-def filter_pcd_by_distance(sourcePcd, testPcd, maxDistance : float):
-    """ 
-    Returns a filtered point cloud based on the distance to another, 
-        1) all the points close enough, 
-        2) all the far away points
+def filter_pcd_by_distance(sourcePcd : o3d.geometry.PointCloud, testPcd: o3d.geometry.PointCloud, maxDistance : float) -> Tuple(o3d.geometry.PointCloud,o3d.geometry.PointCloud):
+    """Splits the sourcePcd in close and too far point compared to the testpcd
+
+    Args:
+        sourcePcd (open3d.geometry.PointCloud): The pcd to be split
+        o3d (open3d.geometry.PointCloud): the pcd to test against
+
+    Returns:
+        Tuple(o3d.geometry.PointCloud,o3d.geometry.PointCloud): The points close enough and the points too far away
     """
 
     dists = sourcePcd.compute_point_cloud_distance(testPcd)
     dists = np.asarray(dists)
     ind = np.where(dists < maxDistance)[0]
 
-    return sourcePcd.select_by_index(ind), sourcePcd.select_by_index(ind, True)
+    return (sourcePcd.select_by_index(ind), sourcePcd.select_by_index(ind, True))
