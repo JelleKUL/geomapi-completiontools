@@ -5,6 +5,8 @@ import geomapi
 import open3d as o3d
 import numpy as np
 
+from typing import Tuple, List
+
 # The main function to combine 2 aligned geometries
 def combine_geometry(ogGeometry: o3d.geometry, newGeometry :o3d.geometry, distanceTreshold : float = 0.05) -> o3d.geometry:
     """Combines 2 aligned geometries assuming the ogGeometry is the reference and the newGeometry will suplement it.
@@ -28,27 +30,51 @@ def combine_geometry(ogGeometry: o3d.geometry, newGeometry :o3d.geometry, distan
 
     # Step 1: Create a convex hull of the newGeometry
     newGeoHull = get_convex_hull(newGeometry)
+    print("Covex hull created")
     # Step 2: Filter out the irrelevant points in the ogGeometry
     relevantOg, irrelevantOg = get_points_in_hull(ogGeometry, newGeoHull)
+    print("Irrelevant points filtered")
     # Step 3: Isolate the not covered points of the ogGeometry compared to the newGeometry
     newGeometryPoints = newGeometry.sample_points_poisson_disk(number_of_points=100000)
     coveredPoints, unCoveredPoints = ut.filter_pcd_by_distance(relevantOg, newGeometryPoints, distanceTreshold)
+    print("Covered poinys calculated")
     # Step 4: Perform the visibility check of the not covered points
     invisibleUncoveredPoints = get_invisible_points(unCoveredPoints, newGeometry)
+    print("invisible points detected")
     # Step 5: Filter the newGeometryPoints to only keep the changed geometry
     existingNewGeo, newNewGeo = ut.filter_pcd_by_distance(newGeometryPoints, relevantOg, distanceTreshold)
+    print("new points filtered")
     # Step 6: Combine the irrelevant, unchanged and changed geometry
     newCombinedGeometry = irrelevantOg + coveredPoints + invisibleUncoveredPoints + newNewGeo
+    print("geometries combined")
     return newCombinedGeometry
 
 # Converts a geometry to a covex hull
-def get_convex_hull(geometry : o3d.geometry):
+def get_convex_hull(geometry : o3d.geometry) ->  o3d.geometry:
+    """Calculates a convex hull of a generic geometry
+
+    Args:
+        geometry (open3d.geometry): The geometry to be hulled
+
+    Returns:
+        open3d.geometry: The resulting hull
+    """
 
     hull, _ = geometry.compute_convex_hull()
     return hull
 
 # Returns a filtered mpcd with only points which are inside the convex hull
-def get_points_in_hull(geometry, hull):
+def get_points_in_hull(geometry : o3d.geometry, hull: o3d.geometry) -> Tuple[o3d.geometry, o3d.geometry]:
+    """Separates a geometry in points inside and outside a convex hull
+
+    Args:
+        geometry (open3d.geometry): The geometry to be filtered
+        hull (open3d.geometry): The hull to filter
+
+    Returns:
+       Tuple[open3d.geometry, open3d.geometry]: Points inside the hull, Points outside the hull
+    """
+
     hullVerts = np.asarray(hull.vertices)
     points = np.asarray(geometry.points)
     idxs = ut.get_indices_in_hull(points, hullVerts)
@@ -57,7 +83,16 @@ def get_points_in_hull(geometry, hull):
     return pcdInHull, pcdOutHull
 
 # checks if the points is inside the (closed) mesh
-def check_point_inside_mesh(points, mesh):
+def check_point_inside_mesh(points: List, mesh :o3d.geometry) -> Tuple[List, List]:
+    """Performs a visibility check to chack if the points are inside the mesh or not
+
+    Args:
+        points (List): The points to check
+        mesh (open3d.geometry): The mesh to check against
+
+    Returns:
+        Tuple[List, List]: The points withing the mesh, the points outside the mesh
+    """
 
     # step 0: Set up a raycasting scene
     scene = o3d.t.geometry.RaycastingScene()
@@ -84,9 +119,18 @@ def check_point_inside_mesh(points, mesh):
     return insideList, outsideList
 
 # geturns all the points that are inside the (closed) mesh
-def get_invisible_points(points, mesh):
+def get_invisible_points(points : o3d.geometry, mesh: o3d.geometry) -> o3d.geometry:
+    """Returns all the points that are not visible because the are within a mesh
+
+    Args:
+        points (open3d.geometry): The points to chack
+        mesh (open3d.geometry): The mesh to check against
+
+    Returns:
+        open3d.geometry: The filtered poincloud
+    """
     
-    insideList, outsideList = check_point_inside_mesh(points, mesh)
+    insideList, outsideList = check_point_inside_mesh(points.points, mesh)
     visiblePoints = o3d.geometry.PointCloud()
     visiblePoints.points = o3d.utility.Vector3dVector(outsideList)
     invisiblePoints = o3d.geometry.PointCloud()
@@ -94,4 +138,5 @@ def get_invisible_points(points, mesh):
     return invisiblePoints
 
 def sample_mesh_with_density(mesh: o3d.geometry.TriangleMesh, density : float) -> o3d.geometry.PointCloud:
+    print("not implemented yet")
     pass

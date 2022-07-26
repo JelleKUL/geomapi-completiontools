@@ -1,3 +1,5 @@
+"Help functions for generic combination algorithms"
+
 import open3d as o3d
 import matplotlib
 from scipy.spatial import Delaunay
@@ -28,7 +30,7 @@ def get_geometry(path : str) -> o3d.geometry:
         
     return newGeometry
 
-def show_geometries(geometries : List[o3d.geometry], color : bool = False):
+def show_geometries(geometries : 'List[o3d.geometry]', color : bool = False):
     """Displays different types of geometry in a scene
 
     Args:
@@ -49,7 +51,7 @@ def show_geometries(geometries : List[o3d.geometry], color : bool = False):
     opt.light_on = True
     viewer.run()
 
-def get_lineset(geometry: o3d.geometry.TriangleMesh, color: Tuple(float, float, float) = (1,0,0)) -> o3d.geometry.LineSet:
+def get_lineset(geometry: o3d.geometry.TriangleMesh, color: Tuple[float, float, float] = (1,0,0)) -> o3d.geometry.LineSet:
     """Returns a lineset representation of a mesh
 
     Args:
@@ -89,7 +91,7 @@ will be computed
 
     return intList
 
-def filter_pcd_by_distance(sourcePcd : o3d.geometry.PointCloud, testPcd: o3d.geometry.PointCloud, maxDistance : float) -> Tuple(o3d.geometry.PointCloud,o3d.geometry.PointCloud):
+def filter_pcd_by_distance(sourcePcd : o3d.geometry.PointCloud, testPcd: o3d.geometry.PointCloud, maxDistance : float) -> Tuple[o3d.geometry.PointCloud,o3d.geometry.PointCloud]:
     """Splits the sourcePcd in close and too far point compared to the testpcd
 
     Args:
