@@ -8,7 +8,7 @@ import numpy as np
 from typing import Tuple, List
 
 # The main function to combine 2 aligned geometries
-def combine_geometry(ogGeometry: o3d.geometry, newGeometry :o3d.geometry, distanceTreshold : float = 0.05) -> o3d.geometry:
+def combine_geometry(ogGeometry: o3d.geometry.Geometry, newGeometry :o3d.geometry.Geometry, distanceTreshold : float = 0.05) -> o3d.geometry.Geometry:
     """Combines 2 aligned geometries assuming the ogGeometry is the reference and the newGeometry will suplement it.
     this is performed in a few steps:
         1) Create a convex hull of the newGeometry
@@ -50,7 +50,7 @@ def combine_geometry(ogGeometry: o3d.geometry, newGeometry :o3d.geometry, distan
     return newCombinedGeometry
 
 # Converts a geometry to a covex hull
-def get_convex_hull(geometry : o3d.geometry) ->  o3d.geometry:
+def get_convex_hull(geometry : o3d.geometry.Geometry) ->  o3d.geometry.Geometry:
     """Calculates a convex hull of a generic geometry
 
     Args:
@@ -64,7 +64,7 @@ def get_convex_hull(geometry : o3d.geometry) ->  o3d.geometry:
     return hull
 
 # Returns a filtered mpcd with only points which are inside the convex hull
-def get_points_in_hull(geometry : o3d.geometry, hull: o3d.geometry) -> Tuple[o3d.geometry, o3d.geometry]:
+def get_points_in_hull(geometry : o3d.geometry.Geometry, hull: o3d.geometry.Geometry) -> Tuple[o3d.geometry.Geometry,o3d.geometry.Geometry]:
     """Separates a geometry in points inside and outside a convex hull
 
     Args:
@@ -83,7 +83,7 @@ def get_points_in_hull(geometry : o3d.geometry, hull: o3d.geometry) -> Tuple[o3d
     return pcdInHull, pcdOutHull
 
 # checks if the points is inside the (closed) mesh
-def check_point_inside_mesh(points: List, mesh :o3d.geometry) -> Tuple[List, List]:
+def check_point_inside_mesh(points: List, mesh :o3d.geometry.Geometry) -> Tuple[List, List]:
     """Performs a visibility check to chack if the points are inside the mesh or not
 
     Args:
@@ -119,7 +119,7 @@ def check_point_inside_mesh(points: List, mesh :o3d.geometry) -> Tuple[List, Lis
     return insideList, outsideList
 
 # geturns all the points that are inside the (closed) mesh
-def get_invisible_points(points : o3d.geometry, mesh: o3d.geometry) -> o3d.geometry:
+def get_invisible_points(points : o3d.geometry.Geometry, mesh: o3d.geometry.Geometry) -> o3d.geometry.Geometry:
     """Returns all the points that are not visible because the are within a mesh
 
     Args:
